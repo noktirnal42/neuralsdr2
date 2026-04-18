@@ -2,7 +2,7 @@
 //  NeuralSDR2App.swift
 //  NeuralSDR2 - Professional SDR for macOS
 //
-//  Main application entry point
+//  Main application entry point with full DSP integration
 //
 
 import SwiftUI
@@ -48,6 +48,18 @@ struct NeuralSDR2App: App {
                 Button("Combined") {
                     appState.displayMode = .combined
                 }
+                Divider()
+                Button("3D Earth") {
+                    // TODO: Open 3D Earth view
+                }
+            }
+            CommandMenu("Demodulator") {
+                ForEach(DemodulatorType.allCases, id: \.self) { mode in
+                    Button(mode.rawValue) {
+                        appState.setMode(mode)
+                    }
+                    .keyboardShortcut(mode.shortcut)
+                }
             }
         }
     }
@@ -62,11 +74,16 @@ class AppState: ObservableObject {
     @Published var frequency: Double = 1090_000_000  // 1090 MHz default
     @Published var sampleRate: Double = 2_048_000
     @Published var displayMode: DisplayMode = .combined
-    @Published var currentMode: DemodulatorMode = .NFM
+    @Published var currentMode: DemodulatorType = .NFM
     @Published var signalLevel: Float = -120.0
+    @Published var spectrumData: [Float] = []
     @Published var statusMessage = "Ready"
+    @Published var bandwidth: Double = 15000
     
     var rtlDevice: RTLSDRDevice?
+    var dspPipeline: DSPPipeline?
+    var audioEngine: AudioOutputEngine?
+    var spectrumAnalyzer: SpectrumAnalyzer?
     
     enum DisplayMode {
         case spectrum
@@ -74,17 +91,23 @@ class AppState: ObservableObject {
         case combined
     }
     
-    enum DemodulatorMode: String {
-        case AM = "AM"
-        case NFM = "NFM"
-        case WFM = "WFM"
-        case USB = "USB"
-        case LSB = "LSB"
-        case CW = "CW"
+    init() {
+        setupAudio()
+        scanForDevices()
+        setupSpectrumAnalyzer()
     }
     
-    init() {
-        scanForDevices()
+    private func setupAudio() {
+        do {
+            audioEngine = AudioOutputEngine()
+            try audioEngine?.initialize(sampleRate: 48000, channels: 2, bufferSize: 512)
+        } catch {
+            statusMessage = "Audio init error: \(error.localizedDescription)"
+        }
+    }
+    
+    private func setupSpectrumAnalyzer() {
+        spectrumAnalyzer = SpectrumAnalyzer(fftSize: 2048, sampleRate: sampleRate, centerFrequency: frequency)
     }
     
     func scanForDevices() {
@@ -105,6 +128,7 @@ class AppState: ObservableObject {
         }
         
         do {
+            // Open RTL-SDR device
             rtlDevice = RTLSDRDevice()
             try rtlDevice?.open(index: 0)
             
@@ -114,12 +138,33 @@ class AppState: ObservableObject {
             
             try rtlDevice?.configure(config)
             
+            // Setup DSP pipeline
+            dspPipeline = DSPPipeline(sampleRate: sampleRate, centerFrequency: frequency)
+            dspPipeline?.setDemodulator(currentMode)
+            
+            // Setup spectrum callback
+            dspPipeline?.onSpectrumUpdate { [weak self] spectrum in
+                DispatchQueue.main.async {
+                    self?.spectrumData = spectrum
+                    self?.updateSignalLevel(spectrum: spectrum)
+                }
+            }
+            
+            // Setup audio callback
+            dspPipeline?.onAudioOutput { [weak self] audio in
+                self?.audioEngine?.queueSamples(audio)
+            }
+            
+            // Start audio engine
+            try audioEngine?.start()
+            
+            // Start RTL-SDR streaming
             try rtlDevice?.startStreaming { [weak self] samples in
-                self?.handleSamples(samples)
+                self?.dspPipeline?.process(samples: samples)
             }
             
             isRunning = true
-            statusMessage = "Running at \(formatFrequency(frequency))"
+            statusMessage = "Running: \(currentMode.rawValue) at \(formatFrequency(frequency))"
             
         } catch {
             statusMessage = "Error: \(error.localizedDescription)"
@@ -131,15 +176,23 @@ class AppState: ObservableObject {
         rtlDevice?.stopStreaming()
         rtlDevice?.close()
         rtlDevice = nil
+        
+        audioEngine?.stop()
+        audioEngine?.clearBuffer()
+        
         isRunning = false
         statusMessage = "Stopped"
+        spectrumData = []
     }
     
     func setFrequency(_ newFrequency: Double) {
         frequency = newFrequency
         if isRunning {
             do {
-                try rtlDevice?.configure(RTLSDRConfig())
+                var config = RTLSDRConfig()
+                config.centerFrequency = frequency
+                try rtlDevice?.configure(config)
+                dspPipeline?.centerFrequency = frequency
                 statusMessage = "Tuned to \(formatFrequency(frequency))"
             } catch {
                 statusMessage = "Tune error: \(error.localizedDescription)"
@@ -147,11 +200,22 @@ class AppState: ObservableObject {
         }
     }
     
-    private func handleSamples(_ samples: [ComplexFloat]) {
-        // Process samples - calculate signal level for demo
-        if !samples.isEmpty {
-            let avgPower = samples.map { $0.magnitudeSquared }.reduce(0, +) / Float(samples.count)
-            signalLevel = 10 * log10(avgPower) - 127.0  // dBFS approximation
+    func setMode(_ mode: DemodulatorType) {
+        currentMode = mode
+        dspPipeline?.setDemodulator(mode)
+        statusMessage = "Mode: \(mode.rawValue)"
+    }
+    
+    func setBandwidth(_ bw: Double) {
+        bandwidth = bw
+        dspPipeline?.setBandwidth(bw)
+    }
+    
+    private func updateSignalLevel(spectrum: [Float]) {
+        // Calculate average power as signal level
+        if !spectrum.isEmpty {
+            let avgPower = spectrum.reduce(0, +) / Float(spectrum.count)
+            signalLevel = avgPower
         }
     }
     
@@ -168,6 +232,21 @@ class AppState: ObservableObject {
     }
 }
 
+// MARK: - Demodulator Shortcuts
+
+extension DemodulatorType {
+    var shortcut: KeyEquivalent {
+        switch self {
+        case .AM: return KeyEquivalent("a")
+        case .NFM: return KeyEquivalent("f")
+        case .WFM: return KeyEquivalent("w")
+        case .USB: return KeyEquivalent("u")
+        case .LSB: return KeyEquivalent("l")
+        case .CW: return KeyEquivalent("c")
+        }
+    }
+}
+
 // MARK: - App Delegate
 
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -180,10 +259,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationWillTerminate(_ notification: Notification) {
-        // Clean up SDR device
-        if let appState = NSApp.windows.first?.contentViewController as? ContentView {
-            // Cleanup handled by deinitializers
-        }
+        // Cleanup handled by deinitializers
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
