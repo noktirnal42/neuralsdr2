@@ -1,0 +1,56 @@
+# Xcode
+## User settings
+xcuserdata/
+*.xcuserstate
+*.hmap
+
+## Build products
+DerivedData/
+build/
+
+## Rerunnable build information
+xcshareddata/
+.swiftpm/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Secrets
+*.key
+*.pem
+credentials.json
+
+# Releases (keep built DMGs out of source)
+releases/*.dmg
+releases/*.zip
+
+# Test artifacts
+test-data/
+coverage/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Swift Package Manager
+Packages/
+Package.resolved
+
+# Local configuration
+config.local.json
+.settings.json
