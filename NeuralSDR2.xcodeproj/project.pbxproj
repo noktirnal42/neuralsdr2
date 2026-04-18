@@ -1,0 +1,192 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+/* Begin PBXBuildFile section */
+		A1000001 /* NeuralSDR2App.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001; };
+		A1000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002; };
+		A1000003 /* RTLSDRDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003; };
+/* End PBXBuildFile section */
+/* Begin PBXFileReference section */
+		A2000001 /* NeuralSDR2App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeuralSDR2App.swift; sourceTree = "<group>"; };
+		A2000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A2000003 /* RTLSDRDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTLSDRDevice.swift; sourceTree = "<group>"; };
+		A3000001 /* NeuralSDR2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeuralSDR2.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+/* Begin PBXGroup section */
+		A5000001 = {
+			isa = PBXGroup;
+			children = (
+				A5000002 /* src */,
+				A5000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A5000002 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				A5000004 /* App */,
+				A5000005 /* UI */,
+				A5000006 /* Hardware */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		A5000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A3000001 /* NeuralSDR2.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A5000004 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A2000001 /* NeuralSDR2App.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A5000005 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				A2000002 /* ContentView.swift */,
+			);
+			path = UI/Main;
+			sourceTree = "<group>";
+		};
+		A5000006 /* Hardware */ = {
+			isa = PBXGroup;
+			children = (
+				A2000003 /* RTLSDRDevice.swift */,
+			);
+			path = Hardware;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+/* Begin PBXNativeTarget section */
+		A6000001 /* NeuralSDR2 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A7000001;
+			buildPhases = (
+				A6000002 /* Sources */,
+				A6000003 /* Frameworks */,
+				A6000004 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NeuralSDR2;
+			productName = NeuralSDR2;
+			productReference = A3000001;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+/* Begin PBXProject section */
+		A8000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = A7000002;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base);
+			mainGroup = A5000001;
+			productRefGroup = A5000003;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (A6000001);
+		};
+/* End PBXProject section */
+/* Begin PBXSourcesBuildPhase section */
+		A6000002 /* Sources */ = {
+			isa = PBXBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000001,
+				A1000002,
+				A1000003,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+/* Begin PBXFrameworksBuildPhase section */
+		A6000003 /* Frameworks */ = {
+			isa = PBXBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+/* Begin PBXResourcesBuildPhase section */
+		A6000004 /* Resources */ = {
+			isa = PBXBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+/* Begin XCBuildConfiguration section */
+		A9000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				INFOPLIST_FILE = src/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.neuralsdr.NeuralSDR2;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A9000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				INFOPLIST_FILE = src/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.neuralsdr.NeuralSDR2;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+/* Begin XCConfigurationList section */
+		A7000001 /* Build configuration list for PBXNativeTarget "NeuralSDR2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (A9000001, A9000002);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A7000002 /* Build configuration list for PBXProject "NeuralSDR2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (A9000001, A9000002);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A8000001;
+}
