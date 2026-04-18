@@ -1,6 +1,5 @@
 // swift-tools-version:5.9
 import PackageDescription
-import Foundation
 
 let package = Package(
     name: "NeuralSDR2",
@@ -11,33 +10,33 @@ let package = Package(
         .executable(
             name: "NeuralSDR2",
             targets: ["NeuralSDR2"]
+        ),
+        .executable(
+            name: "TestRTLSDR",
+            targets: ["TestRTLSDR"]
         )
     ],
-    dependencies: [
-        // No external Swift package dependencies yet
-    ],
+    dependencies: [],
     targets: [
         .executableTarget(
             name: "NeuralSDR2",
             dependencies: [],
             path: "src",
-            sources: [
-                "App/NeuralSDR2App.swift",
-                "UI/Main/ContentView.swift",
-                "Hardware/RTLSDRDevice.swift"
-            ],
+            exclude: ["TestHardware"],
             resources: [
                 .process("Resources")
             ]
+        ),
+        .executableTarget(
+            name: "TestRTLSDR",
+            dependencies: [],
+            path: "src/TestHardware",
+            resources: []
         ),
         .testTarget(
             name: "NeuralSDR2Tests",
             dependencies: ["NeuralSDR2"],
             path: "tests"
         )
-    ],
-    cSettings: [
-        .headerSearchPath("../Hardware"),
-        .define("DEBUG", .when(configuration: .debug))
     ]
 )
