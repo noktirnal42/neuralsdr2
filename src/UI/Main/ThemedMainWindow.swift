@@ -15,6 +15,7 @@ struct ThemedMainWindow: View {
         ZStack {
             // 1. Base Chassis Material
             themeManager.properties.primarySurface
+                .edgesIgnoringSDRCuts() // Custom modifier for edge bleeding
                 .edgesIgnoringSafeArea(.all)
             
             // 2. Layout
@@ -42,7 +43,7 @@ struct ThemedMainWindow: View {
                 
                 // Main Body
                 HStack(spacing: 0) {
-                    // Sidebar (Tied to theme)
+                    // Sidebar
                     MainSidebar()
                         .frame(width: 250)
                         .background(themeManager.properties.accentMaterial)
@@ -52,18 +53,15 @@ struct ThemedMainWindow: View {
                     // Main Display with theme-specific effects
                     ZStack {
                         if themeManager.currentTheme == .military {
-                            // Apply CRT Effect for military
                             CombinedDisplayView()
                                 .modifier(CRTDisplayEffect())
                         } else if themeManager.currentTheme == .vintage {
-                            // Apply Curved Glass for vintage
                             CombinedDisplayView()
                                 .overlay(
                                     // Simulated acrylic lens
                                     RadialGradient(gradient: Gradient(colors: [.white.opacity(0.1), .clear]), center: .center, startRadius: 100, endRadius: 600)
                                 )
                         } else {
-                            // Modern clean look
                             CombinedDisplayView()
                         }
                     }
@@ -85,5 +83,11 @@ struct ThemedMainWindow: View {
             }
         }
         .environmentObject(themeManager)
+    }
+}
+
+extension View {
+    func edgesSDRCuts() -> some View {
+        self.edgesIgnoringSafeArea(.all)
     }
 }
