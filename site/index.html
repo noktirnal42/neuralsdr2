@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NeuralSDR2 • Native macOS SDR mission console</title>
+  <meta name="description" content="NeuralSDR2 is a native macOS SDR mission console for RTL-SDR workflows with radio, aircraft, weather, satellites, recording, and internal post-pass decode tools.">
+  <meta property="og:title" content="NeuralSDR2">
+  <meta property="og:description" content="Native macOS SDR mission console for RTL-SDR workflows.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="./assets/social-preview.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="NeuralSDR2">
+  <meta name="twitter:description" content="Native macOS SDR mission console for RTL-SDR workflows.">
+  <meta name="twitter:image" content="./assets/social-preview.png">
+  <link rel="icon" href="./assets/app-icon.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="./index.html">
+        <img src="./assets/app-icon.png" alt="NeuralSDR2 app icon">
+        <div>
+          <strong>NeuralSDR2</strong>
+          <span>macOS SDR mission console</span>
+        </div>
+      </a>
+      <nav class="site-nav">
+        <a href="./guide.html">Docs</a>
+        <a href="./downloads.html">Downloads</a>
+        <a href="https://github.com/noktirnal42/neuralsdr2">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Native • SwiftUI • RTL-SDR</p>
+          <h1>One console for radio, aircraft, weather, satellites, and decode workflows.</h1>
+          <p class="lede">
+            NeuralSDR2 is a native macOS SDR application built around a universal operations map,
+            a live radio console, and an integrated library for recordings and decoded products.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="./downloads.html">Download v1.1.1</a>
+            <a class="button button-secondary" href="./guide.html">Explore docs</a>
+          </div>
+          <ul class="hero-facts">
+            <li>Live RTL-SDR receive and recording</li>
+            <li>Universal aircraft/weather/satellite map</li>
+            <li>Internal NOAA APT and packet workflows</li>
+          </ul>
+        </div>
+        <div class="hero-visual card-glass">
+          <img src="./assets/hero.png" alt="NeuralSDR2 branded hero artwork">
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-heading">
+          <p class="eyebrow">Core workspaces</p>
+          <h2>Built as a mission console, not just a tuner window.</h2>
+        </div>
+        <div class="workspace-grid">
+          <article class="workspace-card">
+            <h3>Radio</h3>
+            <p>Live tuning, demodulation, spectrum, waterfall, AGC, squelch, and recording.</p>
+          </article>
+          <article class="workspace-card">
+            <h3>Aircraft</h3>
+            <p>Shared universal map for ADS-B context and dump978 weather overlay workflows.</p>
+          </article>
+          <article class="workspace-card">
+            <h3>Sat Ops</h3>
+            <p>Pass prediction, Doppler-aware tuning, queued recording, and post-pass automation.</p>
+          </article>
+          <article class="workspace-card">
+            <h3>3D Earth</h3>
+            <p>Orbital context and space situational awareness inside the same app shell.</p>
+          </article>
+          <article class="workspace-card">
+            <h3>Library</h3>
+            <p>Saved captures, decoded NOAA products, packet reports, replay, and decode-again actions.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section feature-band">
+        <div class="split">
+          <div>
+            <p class="eyebrow">Internal workflows</p>
+            <h2>Capture a pass, then keep working inside the app.</h2>
+            <p>
+              NeuralSDR2 now pushes beyond capture-only SDR use. NOAA APT recordings can flow into
+              internal image artifacts, packet passes can generate in-app analysis, and the library
+              gives you a single place to review, replay, and re-run supported workflows.
+            </p>
+          </div>
+          <div class="pill-grid">
+            <span class="pill">NOAA APT decode</span>
+            <span class="pill">Packet analysis</span>
+            <span class="pill">Replay audio</span>
+            <span class="pill">Decode again</span>
+            <span class="pill">Map-linked artifacts</span>
+            <span class="pill">Pass queueing</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-heading">
+          <p class="eyebrow">Project status</p>
+          <h2>Already useful, still evolving.</h2>
+        </div>
+        <div class="status-grid">
+          <article class="status-card good">
+            <h3>Working well now</h3>
+            <ul>
+              <li>RTL-SDR bring-up and live receive</li>
+              <li>Radio console and recording flow</li>
+              <li>Universal map shell for ops context</li>
+              <li>NOAA pass recording and internal decode</li>
+              <li>Library replay and re-run flow</li>
+            </ul>
+          </article>
+          <article class="status-card caution">
+            <h3>Still rough</h3>
+            <ul>
+              <li>Spectrum and waterfall still need more visual polish</li>
+              <li>Decoder depth is uneven across modes</li>
+              <li>Digital voice is not as mature as the NOAA path</li>
+              <li>Packaging and distribution can improve further</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>NeuralSDR2</span>
+      <div class="footer-links">
+        <a href="./guide.html">Documentation</a>
+        <a href="./downloads.html">Downloads</a>
+        <a href="https://github.com/noktirnal42/neuralsdr2/releases/tag/v1.1.1">Release v1.1.1</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
