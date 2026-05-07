@@ -8,6 +8,8 @@ Native macOS SDR mission console for RTL-SDR workflows.
 ![RTL-SDR](https://img.shields.io/badge/radio-RTL--SDR-1f6feb)
 ![License](https://img.shields.io/badge/license-GPLv3-2da44e)
 
+![NeuralSDR2 hero](docs/assets/hero.png)
+
 NeuralSDR2 is a native Swift/SwiftUI SDR application for macOS that combines live radio tuning, aircraft/weather mapping, satellite pass operations, recording, and internal post-pass decode workflows in one desktop app.
 
 The project started as a traditional receiver UI and has been pushed toward a more operational "universal map + radio console + library" shape. It now includes a shared map workspace for aircraft, weather, and satellites, internal NOAA APT decode artifacts, packet post-pass analysis, and a growing library/replay workflow.
@@ -62,6 +64,16 @@ NeuralSDR2 is built around five main working modes:
 - Latest NOAA and packet session panels
 - Replay of saved audio captures
 - Re-run internal decode from saved recordings
+
+## Visual Overview
+
+![NeuralSDR2 social preview](docs/assets/social-preview.png)
+
+Branding assets committed in this repository:
+
+- [`docs/assets/hero.png`](docs/assets/hero.png)
+- [`docs/assets/social-preview.png`](docs/assets/social-preview.png)
+- [`docs/assets/app-icon.png`](docs/assets/app-icon.png)
 
 ## Project Status
 

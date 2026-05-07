@@ -2,6 +2,31 @@
 
 All notable changes to NeuralSDR2 are documented in this file.
 
+## [1.1.1] - 2026-05-07
+
+### Added
+- Universal operations map shared across aircraft, weather, and satellite workflows
+- dump978 raw feed integration for in-app FIS-B weather overlays
+- Internal NOAA APT decode pipeline with library artifacts and map-linked overlays
+- Internal packet audio analysis workflow and library surfacing
+- Library actions for replaying recordings and re-running supported decodes
+- IQ/no-demod mode and speaker-monitor mute that does not interrupt recordings
+- GitHub Actions build workflow, packaging helpers, and repository branding assets
+
+### Improved
+- Satellite pass operations, queueing, Doppler status, and post-pass automation
+- Workspace-first macOS shell and library workflow
+- Spectrum and waterfall rendering pipeline for centered full-span IQ display
+- Repository documentation and release packaging flow
+
+### Fixed
+- GUI interaction issues in toolbar/library flows
+- packaged app bring-up, USB monitor startup behavior, and RTL-SDR streaming reliability
+- map observer and location annotation stability
+- waterfall/spectrum scaling and display correctness issues
+
+---
+
 ## [1.0.0] - 2026-04-18
 
 ### 🎉 Initial Release
