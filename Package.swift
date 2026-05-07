@@ -7,6 +7,10 @@ let package = Package(
         .macOS(.v13)
     ],
     products: [
+        .library(
+            name: "NeuralSDR2Kit",
+            targets: ["NeuralSDR2Kit"]
+        ),
         .executable(
             name: "NeuralSDR2",
             targets: ["NeuralSDR2"]
@@ -18,24 +22,61 @@ let package = Package(
     ],
     dependencies: [],
     targets: [
-        .executableTarget(
-            name: "NeuralSDR2",
-            dependencies: [],
-            path: "src",
-            exclude: ["TestHardware"],
-            resources: [
-                .process("Resources")
+        // System library target for librtlsdr C binding
+        .systemLibrary(
+            name: "CLibRTLSDR",
+            path: "src/CLibRTLSDR",
+            pkgConfig: "librtlsdr",
+            providers: [
+                .brew(["librtlsdr"])
             ]
         ),
+        // Shared library target — all SDR/DSP/UI code
+        .target(
+            name: "NeuralSDR2Kit",
+            dependencies: ["CLibRTLSDR"],
+            path: "src",
+            exclude: ["TestHardware", "CLibRTLSDR", "Info.plist", "App/NeuralSDR2App.swift"],
+            resources: [
+                .process("Resources")
+            ],
+            linkerSettings: [
+                .linkedLibrary("rtlsdr"),
+                .linkedLibrary("m"), // math
+                .linkedFramework("Accelerate"),
+                .linkedFramework("CoreAudio"),
+                .linkedFramework("AudioToolbox"),
+                .linkedFramework("AVFoundation"),
+                .linkedFramework("Metal"),
+                .linkedFramework("MetalKit"),
+                .linkedFramework("SceneKit"),
+                .linkedFramework("MapKit"),
+            .linkedFramework("CoreLocation"),
+            .linkedFramework("IOKit"),
+            .linkedFramework("Network")
+        ]
+    ),
+        // GUI application executable
+        .executableTarget(
+            name: "NeuralSDR2",
+            dependencies: ["NeuralSDR2Kit"],
+            path: "Sources/NeuralSDR2App",
+            linkerSettings: [
+                .linkedFramework("SwiftUI")
+            ]
+        ),
+        // CLI hardware test executable
         .executableTarget(
             name: "TestRTLSDR",
-            dependencies: [],
+            dependencies: ["NeuralSDR2Kit", "CLibRTLSDR"],
             path: "src/TestHardware",
-            resources: []
+            linkerSettings: [
+                .linkedLibrary("rtlsdr")
+            ]
         ),
         .testTarget(
             name: "NeuralSDR2Tests",
-            dependencies: ["NeuralSDR2"],
+            dependencies: ["NeuralSDR2Kit"],
             path: "tests"
         )
     ]

@@ -7,12 +7,18 @@
 
 import SwiftUI
 
-struct VintageKnob: View {
-    @Binding var value: Double
-    var range: ClosedRange<<DoubleDouble>
-    var label: String
+public struct VintageKnob: View {
+    @Binding public var value: Double
+    public var range: ClosedRange<Double>
+    public var label: String
     
-    var body: some View {
+    public init(value: Binding<Double>, range: ClosedRange<Double>, label: String) {
+        self._value = value
+        self.range = range
+        self.label = label
+    }
+    
+    public var body: some View {
         VStack(spacing: 4) {
             Text(label)
                 .font(.system(size: 10, weight: .bold, design: .serif))
@@ -50,11 +56,11 @@ struct VintageKnob: View {
     }
 }
 
-struct GridKnurl: View {
-    var body: some View {
+public struct GridKnurl: View {
+    public var body: some View {
         Canvas { context, size in
             for x in stride(from: 0, to: size.width, by: 2) {
-                for y in stride(from: 0, and: size.height, by: 2) {
+                for y in stride(from: 0, to: size.height, by: 2) {
                     context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 1, height: 1)), with: .color(.black.opacity(0.3)))
                 }
             }
@@ -62,10 +68,14 @@ struct GridKnurl: View {
     }
 }
 
-struct VintageVUMeter: View {
-    var level: Float // 0.0 to 1.0
+public struct VintageVUMeter: View {
+    public var level: Float // 0.0 to 1.0
     
-    var body: some View {
+    public init(level: Float) {
+        self.level = level
+    }
+    
+    public var body: some View {
         ZStack {
             // Meter background (Aged Paper)
             Ellipse()
@@ -80,7 +90,7 @@ struct VintageVUMeter: View {
             // Scale markings
             VStack {
                 HStack {
-                    ForEach(0..<<110) { i in
+                    ForEach(0..<10) { i in
                         Rectangle()
                             .fill(Color.black)
                             .frame(width: 1, height: 5)

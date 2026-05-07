@@ -9,12 +9,14 @@ import SwiftUI
 
 // MARK: - Bandwidth Control
 
-struct BandwidthControl: View {
-    @Binding var bandwidth: Double
-    var mode: DemodulatorType
+public struct BandwidthControl: View {
+    @Binding public var bandwidth: Double
+    public var mode: DemodulatorType
     
     var recommendedRanges: [(min: Double, max: Double, step: Double)] {
         switch mode {
+        case .IQ:
+            return [(12000, 250000, 5000)]
         case .AM:
             return [(3000, 12000, 1000)]
         case .NFM:
@@ -25,17 +27,19 @@ struct BandwidthControl: View {
             return [(500, 3000, 100)]
         case .CW:
             return [(100, 1000, 50)]
+        case .DMR, .P25, .DSTAR:
+            return [(6250, 12500, 250)]
         }
     }
     
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Filter Bandwidth")
                     .font(.system(size: 11, weight: .semibold))
                 Spacer()
                 Text(formatBandwidth(bandwidth))
-                    .font(.system(size: 11, monospaced: true))
+                    .font(.system(size: 11).monospaced())
                     .foregroundColor(.secondary)
             }
             
@@ -81,20 +85,27 @@ struct BandwidthControl: View {
 
 // MARK: - Gain Control
 
-struct GainControl: View {
-    @Binding var gain: Double
-    var maxGain: Double = 50.0
-    var agcEnabled: Bool
-    var onAGCToggle: () -> Void
+public struct GainControl: View {
+    @Binding public var gain: Double
+    public var maxGain: Double = 50.0
+    public var agcEnabled: Bool
+    public var onAGCToggle: () -> Void
     
-    var body: some View {
+    public init(gain: Binding<Double>, maxGain: Double = 50.0, agcEnabled: Bool, onAGCToggle: @escaping () -> Void) {
+        self._gain = gain
+        self.maxGain = maxGain
+        self.agcEnabled = agcEnabled
+        self.onAGCToggle = onAGCToggle
+    }
+    
+    public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("RF Gain")
                     .font(.system(size: 11, weight: .semibold))
                 Spacer()
                 Text(String(format: "%.1f dB", gain))
-                    .font(.system(size: 11, monospaced: true))
+                    .font(.system(size: 11).monospaced())
                     .foregroundColor(.secondary)
                 
                 Toggle("AGC", isOn: Binding(
@@ -132,7 +143,7 @@ struct GainControl: View {
 
 // MARK: - Squelch Control
 
-struct SquelchControl: View {
+public struct SquelchControl: View {
     @Binding var threshold: Double
     @Binding var enabled: Bool
     var mode: SquelchMode
@@ -143,7 +154,7 @@ struct SquelchControl: View {
         case disabled
     }
     
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Squelch")
@@ -156,7 +167,7 @@ struct SquelchControl: View {
                 Spacer()
                 
                 Text(String(format: "%.1f dB", threshold))
-                    .font(.system(size: 11, monospaced: true))
+                    .font(.system(size: 11).monospaced())
                     .foregroundColor(enabled ? .green : .secondary)
             }
             
@@ -189,13 +200,18 @@ struct SquelchControl: View {
 
 // MARK: - Frequency Entry
 
-struct FrequencyEntry: View {
+public struct FrequencyEntry: View {
+
+    public init(frequency: Binding<Double>, onFrequencyChange: @escaping (Double) -> Void) {
+        self._frequency = frequency
+        self.onFrequencyChange = onFrequencyChange
+    }
     @Binding var frequency: Double
     var onFrequencyChange: (Double) -> Void
     
     @State private var tempFreq: String = ""
     
-    var body: some View {
+    public var body: some View {
         HStack(spacing: 8) {
             Text("Frequency:")
                 .font(.system(size: 11, weight: .semibold))
@@ -233,21 +249,29 @@ struct FrequencyEntry: View {
     
     private func parseAndSetFrequency(_ input: String) {
         var value: Double?
-        
+
         // Try parsing with unit suffix
         if input.lowercased().contains("ghz") {
-            value = Double(input.replacingOccurrences(of: "ghz", with: "", options: .caseInsensitive))?.map { $0 * 1_000_000_000 }
+            if let num = Double(input.replacingOccurrences(of: "ghz", with: "", options: .caseInsensitive)) {
+                value = num * 1_000_000_000
+            }
         } else if input.lowercased().contains("mhz") {
-            value = Double(input.replacingOccurrences(of: "mhz", with: "", options: .caseInsensitive))?.map { $0 * 1_000_000 }
+            if let num = Double(input.replacingOccurrences(of: "mhz", with: "", options: .caseInsensitive)) {
+                value = num * 1_000_000
+            }
         } else if input.lowercased().contains("khz") {
-            value = Double(input.replacingOccurrences(of: "khz", with: "", options: .caseInsensitive))?.map { $0 * 1_000 }
+            if let num = Double(input.replacingOccurrences(of: "khz", with: "", options: .caseInsensitive)) {
+                value = num * 1_000
+            }
         } else if input.lowercased().contains("hz") {
             value = Double(input.replacingOccurrences(of: "hz", with: "", options: .caseInsensitive))
         } else {
             // Assume MHz if no unit
-            value = Double(input)?.map { $0 * 1_000_000 }
+            if let num = Double(input) {
+                value = num * 1_000_000
+            }
         }
-        
+
         if let freq = value {
             onFrequencyChange(freq)
         }
@@ -256,11 +280,16 @@ struct FrequencyEntry: View {
 
 // MARK: - Mode Selector
 
-struct ModeSelector: View {
-    @Binding var currentMode: DemodulatorType
-    var onModeChange: (DemodulatorType) -> Void
+public struct ModeSelector: View {
+    @Binding public var currentMode: DemodulatorType
+    public var onModeChange: (DemodulatorType) -> Void
     
-    var body: some View {
+    public init(currentMode: Binding<DemodulatorType>, onModeChange: @escaping (DemodulatorType) -> Void) {
+        self._currentMode = currentMode
+        self.onModeChange = onModeChange
+    }
+    
+    public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Demodulator")
                 .font(.system(size: 11, weight: .semibold))
@@ -285,12 +314,12 @@ struct ModeSelector: View {
 
 // MARK: - Signal Meter
 
-struct SignalMeter: View {
+public struct SignalMeter: View {
     var level: Float  // dBm
     var squelchThreshold: Double = -120
     var squelchEnabled: Bool = false
     
-    var body: some View {
+    public var body: some View {
         HStack(spacing: 2) {
             Text("S")
                 .font(.system(size: 10, weight: .bold))
@@ -302,9 +331,9 @@ struct SignalMeter: View {
                     .frame(width: 4, height: 14)
             }
             
-            Text(String(format: "%+.0f", level))
-                .font(.system(size: 9, monospaced: true))
-                .foregroundColor(.secondary)
+        Text(String(format: "%+.0f", level))
+            .font(.system(size: 9).monospaced())
+            .foregroundColor(.secondary)
         }
         .padding(4)
         .background(Color(nsColor: .controlBackgroundColor))
@@ -314,7 +343,7 @@ struct SignalMeter: View {
     private func colorForLevel(level: Float, index: Int) -> Color {
         let threshold: Float = -120 + Float(index) * 10
         
-        if squelchEnabled && level < squelchThreshold {
+        if squelchEnabled && level < Float(squelchThreshold) {
             return Color.gray.opacity(0.3)
         }
         
@@ -338,8 +367,8 @@ struct SignalMeter: View {
         BandwidthControl(bandwidth: Binding.constant(2400), mode: .USB)
         GainControl(gain: Binding.constant(35), agcEnabled: false, onAGCToggle: {})
         SquelchControl(threshold: Binding.constant(-90), enabled: Binding.constant(true), mode: .noise)
-        FrequencyEntry(frequency: Binding.constant(1090_000_000), onFrequencyChange: {})
-        ModeSelector(currentMode: Binding.constant(.NFM), onModeChange: {})
+        FrequencyEntry(frequency: Binding.constant(1090_000_000), onFrequencyChange: { _ in })
+        ModeSelector(currentMode: Binding.constant(.NFM), onModeChange: { _ in })
         SignalMeter(level: -65)
     }
     .padding()

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>NeuralSDR2 Changelog</title>
+    <link>https://github.com/USER/NeuralSDR2/releases</link>
+    <description>Most recent changes with links to updates.</description>
+    <language>en</language>
+    <item>
+      <title>Version 1.0.0</title>
+      <sparkle:version>1</sparkle:version>
+      <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+      <pubDate>Mon, 20 Apr 2026 00:00:00 +0000</pubDate>
+      <enclosure url="https://github.com/USER/NeuralSDR2/releases/download/v1.0.0/NeuralSDR2-v1.0.0.dmg"
+                 sparkle:edSignature="SIGNATURE_HERE"
+                 length="FILE_SIZE"
+                 type="application/octet-stream" />
+      <description><![CDATA[<h2>NeuralSDR2 v1.0.0</h2>
+<ul>
+  <li>Initial release</li>
+  <li>RTL-SDR device support with real-time spectrum display</li>
+  <li>AM, NFM, WFM, USB, LSB, CW demodulation</li>
+  <li>Waterfall display with frequency markers</li>
+  <li>Satellite tracking with 3D globe</li>
+  <li>ADS-B aircraft tracking</li>
+  <li>Weather radar overlay</li>
+  <li>Multi-theme UI (Vintage, Modern, Military)</li>
+</ul>]]></description>
+    </item>
+  </channel>
+</rss>

@@ -7,6 +7,7 @@ xcuserdata/
 ## Build products
 DerivedData/
 build/
+.build/
 
 ## Rerunnable build information
 xcshareddata/
@@ -37,6 +38,10 @@ credentials.json
 # Releases (keep built DMGs out of source)
 releases/*.dmg
 releases/*.zip
+releases/*.sha256
+releases/*.app/
+releases/manifest.json
+releases/.DS_Store
 
 # Test artifacts
 test-data/

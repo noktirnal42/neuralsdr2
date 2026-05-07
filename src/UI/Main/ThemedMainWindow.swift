@@ -7,16 +7,21 @@
 
 import SwiftUI
 
-struct ThemedMainWindow: View {
+public struct ThemedMainWindow: View {
+
+    public init() {}
     @EnvironmentObject var appState: AppState
     @StateObject private var themeManager = ThemeManager()
+    @State private var gain: Double = 35.0
+    @State private var squelchThreshold: Double = -90.0
+    @State private var squelchEnabled: Bool = false
+    @State private var agcEnabled: Bool = true
     
-    var body: some View {
+    public var body: some View {
         ZStack {
             // 1. Base Chassis Material
-            themeManager.properties.primarySurface
-                .edgesIgnoringSDRCuts() // Custom modifier for edge bleeding
-                .edgesIgnoringSafeArea(.all)
+        themeManager.properties.primarySurface
+        .edgesIgnoringSafeArea(.all)
             
             // 2. Layout
             VStack(spacing: 0) {
@@ -71,8 +76,8 @@ struct ThemedMainWindow: View {
                     
                     Divider()
                     
-                    // Inspector Panel
-                    MainInspector()
+            // Inspector Panel
+            MainInspector(gain: $gain, squelchThreshold: $squelchThreshold, squelchEnabled: $squelchEnabled, agcEnabled: $agcEnabled)
                         .frame(width: 280)
                         .background(themeManager.properties.accentMaterial)
                 }
@@ -86,7 +91,7 @@ struct ThemedMainWindow: View {
     }
 }
 
-extension View {
+public extension View {
     func edgesSDRCuts() -> some View {
         self.edgesIgnoringSafeArea(.all)
     }

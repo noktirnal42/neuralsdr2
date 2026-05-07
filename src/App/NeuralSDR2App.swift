@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+import os.log
+
+private let logger = Logger(subsystem: "com.neuralsdr2.app", category: "NeuralSDR2App")
 
 @main
 struct NeuralSDR2App: App {
@@ -107,7 +110,7 @@ class AppState: ObservableObject {
     }
     
     private func setupSpectrumAnalyzer() {
-        spectrumAnalyzer = SpectrumAnalyzer(fftSize: 2048, sampleRate: sampleRate, centerFrequency: frequency)
+        spectrumAnalyzer = SpectrumAnalyzer(fftSize: 2048, sampleRate: sampleRate, centerFrequency: frequency, useGPU: false)
     }
     
     func scanForDevices() {
@@ -237,12 +240,16 @@ class AppState: ObservableObject {
 extension DemodulatorType {
     var shortcut: KeyEquivalent {
         switch self {
+        case .IQ: return KeyEquivalent("q")
         case .AM: return KeyEquivalent("a")
         case .NFM: return KeyEquivalent("f")
         case .WFM: return KeyEquivalent("w")
         case .USB: return KeyEquivalent("u")
         case .LSB: return KeyEquivalent("l")
         case .CW: return KeyEquivalent("c")
+        case .DMR: return KeyEquivalent("d")
+        case .P25: return KeyEquivalent("p")
+        case .DSTAR: return KeyEquivalent("i")
         }
     }
 }
@@ -252,9 +259,9 @@ extension DemodulatorType {
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         #if DEBUG
-        print("NeuralSDR2 launched - Debug mode")
+        logger.info("NeuralSDR2 launched - Debug mode")
         #else
-        print("NeuralSDR2 launched")
+        logger.info("NeuralSDR2 launched")
         #endif
     }
     

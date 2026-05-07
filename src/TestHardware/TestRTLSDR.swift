@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import NeuralSDR2Kit
 
 @main
 struct TestRTLSDR {
@@ -113,11 +114,19 @@ struct TestRTLSDR {
             Thread.sleep(forTimeInterval: 5.0)
             
             rtlDevice.stopStreaming()
-            
+
             let elapsed = Date().timeIntervalSince(startTime)
             let mbps = Double(totalBytes) / elapsed / 1_000_000.0
             let sampleRate = Double(totalBytes / 8) / elapsed
-            
+
+            guard samplesReceived > 0 else {
+                print()
+                print("❌ Streaming produced no IQ buffers")
+                print("   The device opened, but async sample capture never delivered data.")
+                rtlDevice.close()
+                exit(1)
+            }
+
             print()
             print("✅ Streaming test complete")
             print("   Duration: \(String(format: "%.2f", elapsed)) seconds")
@@ -143,7 +152,7 @@ struct TestRTLSDR {
             centerFrequency: config.centerFrequency
         )
         
-        pipeline.setDemodulator(.NFM)
+        pipeline.setDemodulator(DemodulatorType.NFM)
         print("✅ DSP pipeline created")
         print("   Demodulator: NFM")
         print("   Sample rate: \(String(format: "%.2f", config.sampleRate / 1_000_000)) MSps")
@@ -156,7 +165,7 @@ struct TestRTLSDR {
             spectrumUpdates += 1
             if spectrumUpdates == 1 {
                 print("   ✅ First spectrum update received")
-                print("      FFT size: \(spectrum.count * 2) points")
+                print("      FFT size: \(spectrum.count) points")
                 print("      Frequency range: \(String(format: "%.1f", config.centerFrequency / 1_000_000 - config.sampleRate / 2_000_000)) - \(String(format: "%.1f", config.centerFrequency / 1_000_000 + config.sampleRate / 2_000_000)) MHz")
             }
         }

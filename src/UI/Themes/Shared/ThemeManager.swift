@@ -58,37 +58,37 @@ public class ThemeManager: ObservableObject {
         ThemeProperties(
             primarySurface: AnyView(BrushedAluminumMaterial()),
             accentMaterial: AnyView(WalnutWoodMaterial()),
-            displayBackground: Color(red: 0.15, green: 0.10, blue: 0.08, alpha: 1.0),
-            accentColor: Color(red: 1.0, green: 0.7, blue: 0.0, alpha: 1.0),
-            textColor: Color(red: 0.96, green: 0.92, blue: 0.85, alpha: 1.0),
-            glowColor: Color(red: 1.0, green: 0.6, blue: 0.0, alpha: 0.5),
+            displayBackground: Color(red: 0.15, green: 0.10, blue: 0.08),
+            accentColor: Color(red: 1.0, green: 0.7, blue: 0.0),
+            textColor: Color(red: 0.96, green: 0.92, blue: 0.85),
+            glowColor: Color(red: 1.0, green: 0.6, blue: 0.0).opacity(0.5),
             shadowColor: Color.black.opacity(0.6),
             displayEffect: .analogIncandescent
         )
     }
-    
+
     // MARK: - Modern Properties
     private var modernProperties: ThemeProperties {
         ThemeProperties(
             primarySurface: AnyView(MatteBlackMaterial()),
             accentMaterial: AnyView(AnodizedAluminumMaterial()),
-            displayBackground: Color(red: 0.05, green: 0.05, blue: 0.1, alpha: 1.0),
-            accentColor: Color(red: 0.0, green: 1.0, blue: 1.0, alpha: 1.0),
+            displayBackground: Color(red: 0.05, green: 0.05, blue: 0.1),
+            accentColor: Color(red: 0.0, green: 1.0, blue: 1.0),
             textColor: .white,
             glowColor: Color.cyan.opacity(0.4),
             shadowColor: Color.black.opacity(0.8),
-            display,Effect: .oledPrecision
+            displayEffect: .oledPrecision
         )
     }
-    
+
     // MARK: - Military Properties
     private var militaryProperties: ThemeProperties {
         ThemeProperties(
-            primary,Surface: AnyView(OliveDrabMaterial()),
+            primarySurface: AnyView(OliveDrabMaterial()),
             accentMaterial: AnyView(RuggedSteelMaterial()),
-            displayBackground: Color(red: 0.02, green: 0.1, blue: 0.02, alpha: 1.0),
-            accentColor: Color(red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0),
-            textColor: Color(red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0),
+            displayBackground: Color(red: 0.02, green: 0.1, blue: 0.02),
+            accentColor: Color(red: 0.0, green: 1.0, blue: 0.0),
+            textColor: Color(red: 0.0, green: 1.0, blue: 0.0),
             glowColor: Color.green.opacity(0.3),
             shadowColor: Color.black.opacity(0.9),
             displayEffect: .crtPhosphor
@@ -98,8 +98,8 @@ public class ThemeManager: ObservableObject {
 
 // MARK: - Material Implementations (Visual Simulations)
 
-struct BrushedAluminumMaterial: View {
-    var body: some View {
+public struct BrushedAluminumMaterial: View {
+    public var body: some View {
         ZStack {
             LinearGradient(gradient: Gradient(colors: [Color(white: 0.7), Color(white: 0.9), Color(white: 0.7)]), startPoint: .top, endPoint: .bottom)
             // Simulate horizontal brushing with a noise overlay
@@ -111,8 +111,8 @@ struct BrushedAluminumMaterial: View {
     }
 }
 
-struct WalnutWoodMaterial: View {
-    var body: some View {
+public struct WalnutWoodMaterial: View {
+    public var body: some View {
         ZStack {
             Color(red: 0.2, green: 0.1, blue: 0.05)
             // Simulated wood grain via linear gradients and noise
@@ -121,8 +121,8 @@ struct WalnutWoodMaterial: View {
     }
 }
 
-struct MatteBlackMaterial: View {
-    var body: some View {
+public struct MatteBlackMaterial: View {
+    public var body: some View {
         ZStack {
             Color(red: 0.08, green: 0.08, blue: 0.1)
             // Micro-sandblasted texture
@@ -134,8 +134,8 @@ struct MatteBlackMaterial: View {
     }
 }
 
-struct OliveDrabMaterial: View {
-    var body: some View {
+public struct OliveDrabMaterial: View {
+    public var body: some View {
         ZStack {
             Color(red: 0.22, green: 0.23, blue: 0.15)
             // Flat paint texture
@@ -146,22 +146,22 @@ struct OliveDrabMaterial: View {
     }
 }
 
-struct AnodizedAluminumMaterial: View {
-    var body: some View {
+public struct AnodizedAluminumMaterial: View {
+    public var body: some View {
         LinearGradient(gradient: Gradient(colors: [Color.gray, Color.white, Color.gray]), startPoint: .top, endPoint: .bottom)
     }
 }
 
-struct RuggedSteelMaterial: View {
-    var body: some View {
+public struct RuggedSteelMaterial: View {
+    public var body: some View {
         Color(red: 0.2, green: 0.2, blue: 0.2)
     }
 }
 
-struct NoiseTextureView: View {
-    var body: some View {
+public struct NoiseTextureView: View {
+    public var body: some View {
         Canvas { context, size in
-            for _ in 0..<<11000 {
+            for _ in 0..<1000 {
                 let x = CGFloat.random(in: 0...size.width)
                 let y = CGFloat.random(in: 0...size.height)
                 context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 1, height: 1)), with: .color(.white))

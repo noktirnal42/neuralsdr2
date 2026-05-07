@@ -8,7 +8,9 @@
 import SwiftUI
 import Foundation
 
-struct RecordingPanel: View {
+public struct RecordingPanel: View {
+
+    public init() {}
     @EnvironmentObject var appState: AppState
     @StateObject private var recordingManager = RecordingManagerWrapper()
     
@@ -19,7 +21,7 @@ struct RecordingPanel: View {
     @State private var recordingDuration: TimeInterval = 0
     @State private var showRecordings = false
     
-    var body: some View {
+    public var body: some View {
         VStack(spacing: 12) {
             // Recording controls
             HStack(spacing: 16) {
@@ -111,7 +113,7 @@ struct RecordingPanel: View {
     }
     
     private func startRecording() {
-        guard let deviceInfo = appState.deviceInfo else { return }
+        guard appState.deviceInfo != nil else { return }
         
         do {
             let url: URL
@@ -125,7 +127,7 @@ struct RecordingPanel: View {
             } else {
                 url = try recordingManager.startAudioRecording(
                     frequency: appState.frequency,
-                    sampleRate: 48000,
+                    sampleRate: appState.dspPipeline?.audioSampleRate ?? 48000,
                     mode: appState.currentMode.rawValue,
                     format: recordingFormat
                 )
@@ -185,14 +187,16 @@ struct RecordingPanel: View {
 
 // MARK: - Recording Library View
 
-struct RecordingLibraryView: View {
+public struct RecordingLibraryView: View {
+
+    public init() {}
     @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) var dismiss
     @State private var recordings: [RecordingMetadata] = []
     @State private var selectedRecording: RecordingMetadata?
     @State private var searchText = ""
     
-    var body: some View {
+    public var body: some View {
         NavigationView {
             VStack(spacing: 0) {
                 // Search bar
@@ -234,10 +238,14 @@ struct RecordingLibraryView: View {
     }
 }
 
-struct RecordingListItem: View {
-    let recording: RecordingMetadata
+public struct RecordingListItem: View {
+    public let recording: RecordingMetadata
     
-    var body: some View {
+    public init(recording: RecordingMetadata) {
+        self.recording = recording
+    }
+    
+    public var body: some View {
         HStack {
             // Icon based on type
             Image(systemName: "waveform")
@@ -302,14 +310,14 @@ struct RecordingListItem: View {
 
 // MARK: - Recording Manager Wrapper
 
-class RecordingManagerWrapper: ObservableObject {
+public class RecordingManagerWrapper: ObservableObject {
     private var manager: RecordingManager?
     
-    var onRecordingStart: ((RecordingMetadata) -> Void)?
-    var onRecordingUpdate: ((RecordingMetadata) -> Void)?
-    var onRecordingStop: ((RecordingMetadata) -> Void)?
+    public var onRecordingStart: ((RecordingMetadata) -> Void)?
+    public var onRecordingUpdate: ((RecordingMetadata) -> Void)?
+    public var onRecordingStop: ((RecordingMetadata) -> Void)?
     
-    init() {
+    public init() {
         manager = RecordingManager()
         setupCallbacks()
     }
@@ -326,16 +334,68 @@ class RecordingManagerWrapper: ObservableObject {
         }
     }
     
-    func startIQRecording(frequency: Double, sampleRate: Double, mode: String, format: RecordingFormat) throws -> URL {
-        try manager?.startIQRecording(frequency: frequency, sampleRate: sampleRate, mode: mode, format: format) ?? URL(fileURLWithPath: "")
+    public func startIQRecording(
+        frequency: Double,
+        sampleRate: Double,
+        mode: String,
+        format: RecordingFormat,
+        notes: String = "",
+        tags: [String] = []
+    ) throws -> URL {
+        try manager?.startIQRecording(
+            frequency: frequency,
+            sampleRate: sampleRate,
+            mode: mode,
+            format: format,
+            notes: notes,
+            tags: tags
+        ) ?? URL(fileURLWithPath: "")
     }
     
-    func startAudioRecording(frequency: Double, sampleRate: Double, mode: String, format: RecordingFormat) throws -> URL {
-        try manager?.startAudioRecording(frequency: frequency, sampleRate: sampleRate, mode: mode, format: format) ?? URL(fileURLWithPath: "")
+    public func startAudioRecording(
+        frequency: Double,
+        sampleRate: Double,
+        mode: String,
+        format: RecordingFormat,
+        notes: String = "",
+        tags: [String] = []
+    ) throws -> URL {
+        try manager?.startAudioRecording(
+            frequency: frequency,
+            sampleRate: sampleRate,
+            mode: mode,
+            format: format,
+            notes: notes,
+            tags: tags
+        ) ?? URL(fileURLWithPath: "")
     }
     
-    func stopRecording() throws -> RecordingMetadata? {
+    public func stopRecording() throws -> RecordingMetadata? {
         try manager?.stopRecording()
+    }
+
+    public func writeIQSamples(_ samples: [ComplexFloat]) throws {
+        try manager?.writeSamples(samples)
+    }
+
+    public func writeAudioSamples(_ samples: [Float]) throws {
+        try manager?.writeAudioSamples(samples)
+    }
+
+    public var currentRecordingType: RecordingType? {
+        manager?.currentRecordingType
+    }
+
+    public func getRecordings(filter: String? = nil) -> [RecordingMetadata] {
+        manager?.getRecordings(filter: filter) ?? []
+    }
+
+    public func getRecordingsDirectory() -> URL? {
+        manager?.getRecordingsDirectory()
+    }
+
+    public var currentState: RecordingState {
+        manager?.currentState ?? .idle
     }
 }
 

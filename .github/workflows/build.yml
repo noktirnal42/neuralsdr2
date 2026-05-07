@@ -1,0 +1,160 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+env:
+  SCHEME: NeuralSDR2
+  CONFIGURATION: release
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Swift build
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: swift-${{ runner.os }}-${{ hashFiles('Package.swift', 'Package.resolved') }}
+          restore-keys: |
+            swift-${{ runner.os }}-
+
+      - name: Install librtlsdr
+        run: brew install librtlsdr
+
+      - name: Build
+        run: swift build -c release 2>&1 | tail -20
+
+      - name: Run tests
+        run: swift test 2>&1 | tail -20
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: .build/debug/*.xcresult
+          retention-days: 7
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeuralSDR2-binary
+          path: .build/release/NeuralSDR2
+          retention-days: 5
+
+  release:
+    name: Create Release
+    needs: build-and-test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: macos-14
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Swift build
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: swift-${{ runner.os }}-${{ hashFiles('Package.swift', 'Package.resolved') }}
+          restore-keys: |
+            swift-${{ runner.os }}-
+
+      - name: Install librtlsdr
+        run: brew install librtlsdr
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build release
+        run: swift build -c release 2>&1 | tail -20
+
+      - name: Create app bundle
+        run: |
+          chmod +x build_app.sh
+          ./build_app.sh --version "${{ steps.version.outputs.VERSION }}" --dmg
+
+      - name: Code sign (if certificate available)
+        if: env.DEVELOPER_ID_CERTIFICATE != ''
+        env:
+          DEVELOPER_ID_CERTIFICATE: ${{ secrets.DEVELOPER_ID_CERTIFICATE }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          TEAM_ID: ${{ secrets.TEAM_ID }}
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 16)"
+          P12_PATH="$RUNNER_TEMP/certificate.p12"
+
+          echo "$DEVELOPER_ID_CERTIFICATE" | base64 --decode > "$P12_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$P12_PATH" -P "$P12_PASSWORD" -A -t cert -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | \
+            grep "Developer ID Application" | head -1 | \
+            sed -n 's/.*"\(.*\)".*/\1/p')
+
+          if [ -n "$IDENTITY" ]; then
+            chmod +x scripts/sign_and_notarize.sh
+            scripts/sign_and_notarize.sh \
+              --identity "$IDENTITY" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_PASSWORD" \
+              --team-id "$TEAM_ID" \
+              --version "${{ steps.version.outputs.VERSION }}"
+          fi
+
+          security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
+
+      - name: Generate checksum
+        id: checksum
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          DMG="releases/NeuralSDR2-v${VERSION}.dmg"
+          if [ -f "$DMG" ]; then
+            SHASUM=$(shasum -a 256 "$DMG" | cut -d' ' -f1)
+            echo "sha256=$SHASUM" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: NeuralSDR2 v${{ steps.version.outputs.VERSION }}
+          body: |
+            ## NeuralSDR2 v${{ steps.version.outputs.VERSION }}
+
+            **SHA256:** `${{ steps.checksum.outputs.sha256 }}`
+
+            ### Installation
+            1. Download `NeuralSDR2-v${{ steps.version.outputs.VERSION }}.dmg`
+            2. Open the DMG and drag NeuralSDR2 to Applications
+            3. If macOS blocks the app, right-click → Open on first launch
+
+            ### Requirements
+            - macOS 13.0 (Ventura) or later
+            - RTL-SDR compatible USB dongle
+            - librtlsdr (`brew install librtlsdr`)
+          files: |
+            releases/NeuralSDR2-v${{ steps.version.outputs.VERSION }}.dmg
+            releases/NeuralSDR2-v${{ steps.version.outputs.VERSION }}.dmg.sha256
+          draft: false
+          prerelease: false

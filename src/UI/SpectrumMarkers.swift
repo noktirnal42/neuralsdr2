@@ -86,7 +86,7 @@ public class MarkerManager {
         var endIndex = spectrum.count - 1
         
         // Limit search range if specified
-        if let range = range, let freqAxis = frequencyAxis.first {
+        if let range = range, let _ = frequencyAxis.first {
             if let startFreq = frequencyAxis.firstIndex(where: { $0 >= range.lowerBound }) {
                 startIndex = startFreq
             }
@@ -280,4 +280,11 @@ public struct FrequencyPreset {
     public let start: Double
     public let end: Double
     public let step: Double
+    
+    public init(name: String, start: Double, end: Double, step: Double) {
+        self.name = name
+        self.start = start
+        self.end = end
+        self.step = step
+    }
 }

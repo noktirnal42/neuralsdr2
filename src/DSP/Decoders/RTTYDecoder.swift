@@ -1,158 +1,291 @@
 //
-//  RTTYDecoder.swift
-//  NeuralSDR2
+// RTTYDecoder.swift
+// NeuralSDR2
 //
-//  RTTY (Radio Teletype) Decoder
-//  Supports Baudot code, 45.45 baud standard
+// RTTY (Radio Teletype) Decoder
+// Dual Goertzel detectors for mark/space, symbol timing PLL, Baudot decode
 //
 
 import Foundation
 
-/// RTTY Decoder
 public class RTTYDecoder: DSPBlock {
     public var name: String = "RTTY Decoder"
     public var sampleRate: Double
     public var inputChannels = 1
     public var outputChannels = 1
-    
-    // RTTY constants
-    private let baudRate: Double = 45.45   // Standard RTTY speed
-    private let shift: Double = 170.0      // 170 Hz shift (standard)
+
+    private let baudRate: Double = 45.45
+    private var shift: Double = 170.0
     private var samplesPerBit: Int
-    
-    // State
+
     private var markFrequency: Double = 2125.0
     private var spaceFrequency: Double = 1275.0
-    private var currentBit: Bool = false
-    private var bitCount: Int = 0
-    private var dataBits: UInt32 = 0
-    private var inStartBit: Bool = false
-    private var sampleCounter: Int = 0
-    
-    // Baudot code state
+
+    private var markGoertzelN: Int = 0
+    private var markGoertzelCoeff: Float = 0
+    private var markQ0: Float = 0
+    private var markQ1: Float = 0
+    private var markQ2: Float = 0
+    private var markGoertzelCount: Int = 0
+
+    private var spaceGoertzelN: Int = 0
+    private var spaceGoertzelCoeff: Float = 0
+    private var spaceQ0: Float = 0
+    private var spaceQ1: Float = 0
+    private var spaceQ2: Float = 0
+    private var spaceGoertzelCount: Int = 0
+
+    private var lastMarkPower: Float = 0
+    private var lastSpacePower: Float = 0
+
+    private var pllPhase: Double = 0
+    private var pllFreq: Double = 0
+    private var pllCenterFreq: Double = 0
+
+    private enum RxState {
+        case waitingForStart
+        case inStartBit
+        case inDataBit
+        case inStopBit
+    }
+
+    private var rxState: RxState = .waitingForStart
+    private var bitIndex: Int = 0
+    private var dataBits: UInt8 = 0
+    private var isMark: Bool = true
+    private var lastIsMark: Bool = true
+
     private var lettersMode: Bool = true
-    
-    // Filters
-    private var markFilter: FIRFilter?
-    private var spaceFilter: FIRFilter?
-    
-    // Callbacks
+
+    private var decodedText: String = ""
+
     public var onCharacter: ((Character) -> Void)?
     public var onText: ((String) -> Void)?
-    
+
     public init(sampleRate: Double = 48000) {
         self.sampleRate = sampleRate
         self.samplesPerBit = Int(sampleRate / baudRate)
-        setupFilters()
+        self.pllCenterFreq = baudRate
+        self.pllFreq = baudRate
+        setupGoertzel()
     }
-    
-    private func setupFilters() {
-        // Create filters for mark and space frequencies
-        // Implementation here
+
+    private func setupGoertzel() {
+        markGoertzelN = max(samplesPerBit, 64)
+        let markK = Int(0.5 + Double(markGoertzelN) * markFrequency / sampleRate)
+        markGoertzelCoeff = 2.0 * cos(2.0 * Float.pi * Float(markK) / Float(markGoertzelN))
+        markQ0 = 0; markQ1 = 0; markQ2 = 0
+        markGoertzelCount = 0
+
+        spaceGoertzelN = max(samplesPerBit, 64)
+        let spaceK = Int(0.5 + Double(spaceGoertzelN) * spaceFrequency / sampleRate)
+        spaceGoertzelCoeff = 2.0 * cos(2.0 * Float.pi * Float(spaceK) / Float(spaceGoertzelN))
+        spaceQ0 = 0; spaceQ1 = 0; spaceQ2 = 0
+        spaceGoertzelCount = 0
     }
-    
+
+    private func goertzelMark(_ sample: ComplexFloat) {
+        markQ0 = markGoertzelCoeff * markQ1 - markQ2 + sample.real
+        markQ2 = markQ1
+        markQ1 = markQ0
+        markGoertzelCount += 1
+        if markGoertzelCount >= markGoertzelN {
+            lastMarkPower = markQ1 * markQ1 + markQ2 * markQ2 - markGoertzelCoeff * markQ1 * markQ2
+            markQ0 = 0; markQ1 = 0; markQ2 = 0
+            markGoertzelCount = 0
+        }
+    }
+
+    private func goertzelSpace(_ sample: ComplexFloat) {
+        spaceQ0 = spaceGoertzelCoeff * spaceQ1 - spaceQ2 + sample.real
+        spaceQ2 = spaceQ1
+        spaceQ1 = spaceQ0
+        spaceGoertzelCount += 1
+        if spaceGoertzelCount >= spaceGoertzelN {
+            lastSpacePower = spaceQ1 * spaceQ1 + spaceQ2 * spaceQ2 - spaceGoertzelCoeff * spaceQ1 * spaceQ2
+            spaceQ0 = 0; spaceQ1 = 0; spaceQ2 = 0
+            spaceGoertzelCount = 0
+        }
+    }
+
+    private func detectMarkSpace(_ sample: ComplexFloat) -> Bool {
+        goertzelMark(sample)
+        goertzelSpace(sample)
+        return lastMarkPower > lastSpacePower
+    }
+
+    private func pllAdvance() -> Bool {
+        pllPhase += pllFreq / sampleRate
+        if pllPhase >= 1.0 {
+            pllPhase -= 1.0
+            return true
+        }
+        return false
+    }
+
+    private func pllCorrect(_ transition: Bool) {
+        if transition {
+            let error = pllPhase - 0.5
+            pllFreq += error * 0.01 * baudRate
+        }
+        let freqError = pllFreq - pllCenterFreq
+        pllFreq -= freqError * 0.0001
+    }
+
     public func process(_ input: UnsafePointer<ComplexFloat>, _ output: UnsafeMutablePointer<ComplexFloat>, count: Int) {
         for i in 0..<count {
             output[i] = input[i]
         }
-        
-        // Detect mark vs space
-        // Count bits
-        // Decode characters
-    }
-    
-    private func detectFrequency(_ samples: [ComplexFloat]) -> Double {
-        // Simple frequency detection using zero crossings or FFT
-        return 0.0
-    }
-    
-    private func decodeBit(_ isMark: Bool) {
-        sampleCounter += 1
-        
-        if sampleCounter >= samplesPerBit {
-            sampleCounter = 0
-            
-            if !inStartBit {
-                // Look for start bit (space)
+
+        for i in 0..<count {
+            let currentIsMark = detectMarkSpace(input[i])
+
+            let transition = currentIsMark != lastIsMark
+            lastIsMark = currentIsMark
+
+            let symbolEdge = pllAdvance()
+            if transition {
+                pllCorrect(true)
+            }
+
+            if !symbolEdge { continue }
+
+            isMark = currentIsMark
+
+            switch rxState {
+            case .waitingForStart:
                 if !isMark {
-                    inStartBit = true
-                    bitCount = 0
+                    rxState = .inStartBit
+                    pllPhase = 0.5
+                    bitIndex = 0
                     dataBits = 0
                 }
-            } else {
-                // Collect data bits
+
+            case .inStartBit:
                 if isMark {
-                    dataBits |= (1 << bitCount)
-                }
-                bitCount += 1
-                
-                if bitCount >= 5 {
-                    // Decode Baudot character
-                    let char = baudotToChar(dataBits)
-                    if let c = char {
-                        onCharacter?(c)
-                    }
-                    inStartBit = false
-                    bitCount = 0
+                    rxState = .waitingForStart
+                } else {
+                    rxState = .inDataBit
+                    bitIndex = 0
                     dataBits = 0
                 }
+
+            case .inDataBit:
+                if isMark {
+                    dataBits |= (1 << bitIndex)
+                }
+                bitIndex += 1
+                if bitIndex >= 5 {
+                    rxState = .inStopBit
+                }
+
+            case .inStopBit:
+                if isMark {
+                    decodeBaudot(dataBits)
+                }
+                rxState = .waitingForStart
             }
         }
     }
-    
-    private func baudotToChar(_ code: UInt32) -> Character? {
-        // ITA2 Baudot code table (partial)
-        let lettersTable: [UInt32: Character] = [
-            0x01: "E", 0x02: "LF", 0x03: "A", 0x04: " ", 
-            0x05: "S", 0x06: "I", 0x07: "U", 0x08: "CR",
-            0x09: "D", 0x0A: "R", 0x0B: "J", 0x0C: "N",
-            0x0D: "F", 0x0E: "C", 0x0F: "K", 0x10: "T",
-            0x11: "Z", 0x12: "L", 0x13: "W", 0x14: "H",
-            0x15: "Y", 0x16: "P", 0x17: "Q", 0x18: "O",
-            0x19: "B", 0x1A: "G", 0x1B: "M", 0x1C: "X",
-        ]
-        
-        let figuresTable: [UInt32: Character] = [
+
+    private func decodeBaudot(_ code: UInt8) {
+        if code == 0x1B {
+            lettersMode = false
+            return
+        }
+        if code == 0x1F {
+            lettersMode = true
+            return
+        }
+
+        let char: Character?
+        if lettersMode {
+            char = baudotLetter(code)
+        } else {
+            char = baudotFigure(code)
+        }
+
+        if let c = char {
+            decodedText += String(c)
+            onCharacter?(c)
+            onText?(decodedText)
+        }
+    }
+
+    private func baudotLetter(_ code: UInt8) -> Character? {
+        let table: [UInt8: Character] = [
+            0x00: "\0",
             0x01: "E", 0x02: "\n", 0x03: "A", 0x04: " ",
             0x05: "S", 0x06: "I", 0x07: "U", 0x08: "\r",
             0x09: "D", 0x0A: "R", 0x0B: "J", 0x0C: "N",
             0x0D: "F", 0x0E: "C", 0x0F: "K", 0x10: "T",
             0x11: "Z", 0x12: "L", 0x13: "W", 0x14: "H",
             0x15: "Y", 0x16: "P", 0x17: "Q", 0x18: "O",
-            0x19: "B", 0x1A: "9", 0x1B: "M", 0x1C: "X",
+            0x19: "B", 0x1A: "G", 0x1C: "M", 0x1D: "X",
+            0x1E: "V"
         ]
-        
-        // Handle shift codes
-        if code == 0x1B {  // FIGS
-            // Would switch to figures mode
-            return nil
-        } else if code == 0x1F {  // LTRS
-            lettersMode = true
-            return nil
-        }
-        
-        if lettersMode {
-            return lettersTable[code]
-        } else {
-            return figuresTable[code]
-        }
+        return table[code]
     }
-    
+
+    private func baudotFigure(_ code: UInt8) -> Character? {
+        let table: [UInt8: Character] = [
+            0x00: "\0",
+            0x01: "3", 0x02: "\n", 0x03: "-", 0x04: " ",
+            0x05: "'", 0x06: "8", 0x07: "7", 0x08: "\r",
+            0x09: "⚠", 0x0A: "4", 0x0B: "🔔", 0x0C: ",",
+            0x0D: "!", 0x0E: ":", 0x0F: "(", 0x10: "5",
+            0x11: "\"", 0x12: ")", 0x13: "2", 0x14: "#",
+            0x15: "6", 0x16: "0", 0x17: "1", 0x18: "9",
+            0x19: "?", 0x1A: "&", 0x1C: ".", 0x1D: "/",
+            0x1E: ";"
+        ]
+        return table[code]
+    }
+
     public func reset() {
-        inStartBit = false
-        bitCount = 0
+        rxState = .waitingForStart
+        bitIndex = 0
         dataBits = 0
-        sampleCounter = 0
+        isMark = true
+        lastIsMark = true
+        lettersMode = true
+        decodedText = ""
+        pllPhase = 0
+        pllFreq = pllCenterFreq
+        markQ0 = 0; markQ1 = 0; markQ2 = 0; markGoertzelCount = 0
+        spaceQ0 = 0; spaceQ1 = 0; spaceQ2 = 0; spaceGoertzelCount = 0
+        lastMarkPower = 0
+        lastSpacePower = 0
     }
-    
+
     public func configure(params: [String: Any]) {
         if let sr = params["sampleRate"] as? Double {
             sampleRate = sr
             samplesPerBit = Int(sampleRate / baudRate)
-            setupFilters()
+            setupGoertzel()
         }
-        if let shift = params["shift"] as? Double {
-            self.shift = shift
+        if let newShift = params["shift"] as? Double {
+            shift = newShift
+            spaceFrequency = markFrequency - shift
+            setupGoertzel()
         }
+        if let mark = params["markFrequency"] as? Double {
+            markFrequency = mark
+            spaceFrequency = markFrequency - shift
+            setupGoertzel()
+        }
+        if let baud = params["baudRate"] as? Double {
+            pllCenterFreq = baud
+            pllFreq = baud
+            samplesPerBit = Int(sampleRate / baud)
+        }
+    }
+
+    public func getText() -> String {
+        return decodedText
+    }
+
+    public func clearText() {
+        decodedText = ""
     }
 }

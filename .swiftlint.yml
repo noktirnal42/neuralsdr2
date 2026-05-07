@@ -1,0 +1,76 @@
+# SwiftLint configuration for NeuralSDR2
+included:
+  - src
+  - tests
+  - Sources
+excluded:
+  - .build
+  - .git
+  - releases
+  - src/CLibRTLSDR
+opt_in_rules:
+  - closure_end_indentation
+  - closure_spacing
+  - collection_alignment
+  - contains_over_filter_count
+  - empty_count
+  - empty_string
+  - explicit_init
+  - file_header
+  - first_where
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - joined_default_parameter
+  - literal_expression_end_indentation
+  - multiline_arguments
+  - multiline_literal_brackets
+  - multiline_parameters
+  - nimble_operator
+  - number_separator
+  - operator_usage_whitespace
+  - overridden_super_call
+  - override_in_extension
+  - pattern_matching_keywords
+  - private_outlet
+  - prohibited_super_call
+  - quick_discouraged_call
+  - quick_discouraged_focused_test
+  - quick_discouraged_pending_test
+  - reduce_integer
+  - redundant_type_annotation
+  - single_test_class
+  - sorted_first_last
+  - sorted_imports
+  - switch_case_on_newline
+  - trailing_closure
+  - type_contents_order
+  - unneeded_parentheses_in_closure_argument
+  - vertical_parameter_alignment_on_call
+  - vertical_whitespace_closing_braces
+  - yoda_condition
+disabled_rules:
+  - trailing_whitespace # Common in Metal shader strings
+  - line_length # DSP code often has long lines
+  - type_body_length # Large decoder classes
+  - file_length # Large decoder files
+  - function_body_length # DSP processing functions are long
+  - function_parameter_count # DSP process() needs many params
+  - cyclomatic_complexity # State machines have high complexity
+type_name:
+  min_length: 2
+  max_length: 50
+identifier_name:
+  min_length: 1
+  max_length: 60
+  allowed_symbols: "_"
+custom_rules:
+  no_print:
+    name: "Prefer Logger over print"
+    regex: "\\bprint\\("
+    message: "Use `Logger` from `os.log` instead of `print()`"
+    severity: warning
+  no_debug_print:
+    name: "Prefer Logger over debugPrint"
+    regex: "\\bdebugPrint\\("
+    message: "Use `Logger` from `os.log` instead of `debugPrint()`"
+    severity: warning

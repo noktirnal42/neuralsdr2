@@ -7,12 +7,18 @@
 
 import SwiftUI
 
-struct ModernEncoder: View {
-    @Binding var value: Double
-    var range: ClosedRange<<DoubleDouble>
-    var label: String
+public struct ModernEncoder: View {
+    @Binding public var value: Double
+    public var range: ClosedRange<Double>
+    public var label: String
     
-    var body: some View {
+    public init(value: Binding<Double>, range: ClosedRange<Double>, label: String) {
+        self._value = value
+        self.range = range
+        self.label = label
+    }
+    
+    public var body: some View {
         VStack(spacing: 8) {
             Text(label)
                 .font(.system(size: 10, weight: .medium, design: .monospaced))
@@ -58,12 +64,18 @@ struct ModernEncoder: View {
     }
 }
 
-struct ModernButton: View {
-    var label: String
-    var isActive: Bool
-    var action: () -> Void
+public struct ModernButton: View {
+    public var label: String
+    public var isActive: Bool
+    public var action: () -> Void
     
-    var body: some View {
+    public init(label: String, isActive: Bool, action: @escaping () -> Void) {
+        self.label = label
+        self.isActive = isActive
+        self.action = action
+    }
+    
+    public var body: some View {
         Button(action: action) {
             Text(label)
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
@@ -87,10 +99,14 @@ struct ModernButton: View {
     }
 }
 
-struct ModernOLEDDisplay: View {
-    var content: AnyView
+public struct ModernOLEDDisplay: View {
+    public var content: AnyView
     
-    var body: some View {
+    public init(content: AnyView) {
+        self.content = content
+    }
+    
+    public var body: some View {
         ZStack {
             Color.black
             

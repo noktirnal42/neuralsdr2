@@ -7,11 +7,16 @@
 
 import SwiftUI
 
-struct MilitaryToggle: View {
-    @Binding var isOn: Bool
-    var label: String
+public struct MilitaryToggle: View {
+    @Binding public var isOn: Bool
+    public var label: String
     
-    var body: some View {
+    public init(isOn: Binding<Bool>, label: String) {
+        self._isOn = isOn
+        self.label = label
+    }
+    
+    public var body: some View {
         VStack(spacing: 8) {
             Text(label)
                 .font(.system(size: 10, weight: .bold))
@@ -44,12 +49,18 @@ struct MilitaryToggle: View {
     }
 }
 
-struct MilitaryRotary: View {
-    @Binding var value: Double
-    var range: ClosedRange<<DoubleDouble>
-    var label: String
+public struct MilitaryRotary: View {
+    @Binding public var value: Double
+    public var range: ClosedRange<Double>
+    public var label: String
     
-    var body: some View {
+    public init(value: Binding<Double>, range: ClosedRange<Double>, label: String) {
+        self._value = value
+        self.range = range
+        self.label = label
+    }
+    
+    public var body: some View {
         VStack(spacing: 8) {
             Text(label)
                 .font(.system(size: 10, weight: .bold))
@@ -67,7 +78,7 @@ struct MilitaryRotary: View {
                     .frame(width: 50, height: 50)
                     .overlay(
                         // Simulated deep ridges
-                        ForEach(0..<<336) { i in
+                        ForEach(0..<36) { i in
                             Rectangle()
                                 .fill(Color.black.opacity(0.5))
                                 .frame(width: 2, height: 10)
@@ -92,10 +103,14 @@ struct MilitaryRotary: View {
     }
 }
 
-struct TacticalLabel: View {
-    var text: String
+public struct TacticalLabel: View {
+    public var text: String
     
-    var body: some View {
+    public init(text: String) {
+        self.text = text
+    }
+    
+    public var body: some View {
         Text(text.uppercased())
             .font(.system(size: 12, weight: .bold, design: .monospaced))
             .foregroundColor(Color(red: 0.8, green: 0.8, blue: 0.7))

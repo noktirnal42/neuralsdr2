@@ -10,37 +10,55 @@ import Foundation
 import Accelerate
 import simd
 
-/// Complex float using SIMD for performance
+/// A complex number representation using single-precision floating point.
+///
+/// `ComplexFloat` stores in-phase (real) and quadrature (imaginary) components
+/// of a complex sample. All DSP blocks in NeuralSDR2Kit operate on arrays of
+/// ``ComplexFloat`` values representing IQ sample streams.
+///
+/// ```swift
+/// let sample = ComplexFloat(real: 0.707, imag: 0.707)
+/// let magnitude = sample.magnitude  // 1.0
+/// let phase = sample.phase          // π/4
+/// ```
 public struct ComplexFloat: Sendable {
+    /// The in-phase (I) component of the complex sample.
     public var real: Float
+    /// The quadrature (Q) component of the complex sample.
     public var imag: Float
-    
+
+    /// Creates a complex number with the given real and imaginary parts.
+    /// - Parameters:
+    ///   - real: The in-phase component.
+    ///   - imag: The quadrature component.
     public init(real: Float, imag: Float) {
         self.real = real
         self.imag = imag
     }
-    
-    /// Magnitude (amplitude)
+
+    /// The magnitude (amplitude) of the complex number, computed as √(real² + imag²).
     public var magnitude: Float {
         return sqrt(real * real + imag * imag)
     }
     
-    /// Magnitude squared (faster, no sqrt)
+    /// The magnitude squared, computed as real² + imag². Faster than ``magnitude`` when you only need relative values.
     public var magnitudeSquared: Float {
         return real * real + imag * imag
     }
     
-    /// Phase (angle in radians)
+    /// The phase (angle in radians) of the complex number, in the range [-π, π].
     public var phase: Float {
         return atan2(imag, real)
     }
     
-    /// Convert from dB to linear
+    /// Converts a decibel value to linear amplitude (10^(dB/20)).
+    /// - Parameter db: The value in decibels.
+    /// - Returns: The linear amplitude.
     public static func fromDB(_ db: Float) -> Float {
         return pow(10.0, db / 20.0)
     }
     
-    /// Convert to dB
+    /// The magnitude in decibels, computed as 20·log₁₀(magnitude).
     public var toDB: Float {
         return 20.0 * log10(magnitude + 1e-10)
     }
@@ -89,37 +107,48 @@ extension ComplexFloat {
 
 // MARK: - DSP Block Protocol
 
-/// Protocol for all DSP processing blocks
+/// A protocol that defines the interface for all DSP processing blocks.
+///
+/// Conforming types represent a single processing stage in a signal flowgraph.
+/// Each block has a name, sample rate, and a ``process(_:_:count:)`` method
+/// that transforms input samples into output samples.
+///
+/// Blocks are connected via ``Flowgraph`` to form processing pipelines.
 public protocol DSPBlock {
-    /// Unique identifier for this block
+    /// A unique identifier for this block within a ``Flowgraph``.
     var name: String { get }
-    
-    /// Sample rate the block operates at
+
+    /// The sample rate this block operates at, in samples per second.
     var sampleRate: Double { get set }
-    
-    /// Number of input channels
+
+    /// The number of input channels this block accepts.
     var inputChannels: Int { get }
-    
-    /// Number of output channels
+
+    /// The number of output channels this block produces.
     var outputChannels: Int { get }
-    
-    /// Process a buffer of samples
+
+    /// Process a buffer of complex samples.
+    ///
     /// - Parameters:
-    ///   - input: Input samples (interleaved if multi-channel)
-    ///   - output: Output buffer to fill
-    ///   - count: Number of samples to process
+    ///   - input: Pointer to input ``ComplexFloat`` samples.
+    ///   - output: Pointer to the output buffer to fill with processed samples.
+    ///   - count: The number of samples to process.
     func process(_ input: UnsafePointer<ComplexFloat>, _ output: UnsafeMutablePointer<ComplexFloat>, count: Int)
-    
-    /// Reset internal state
+
+    /// Reset internal state (delay lines, phase accumulators, etc.).
     func reset()
-    
-    /// Configure block with new parameters
+
+    /// Configure the block with new parameters at runtime.
+    /// - Parameter params: A dictionary of parameter names to values.
     func configure(params: [String: Any])
 }
 
 // MARK: - Flowgraph
 
-/// Manages connections between DSP blocks
+/// Manages connections between DSP blocks in a GNU Radio-inspired flowgraph.
+///
+/// Add blocks with ``addBlock(_:)``, connect them with ``connect(from:to:)``,
+/// then start the flowgraph to begin processing.
 public class Flowgraph {
     private var blocks: [String: DSPBlock] = [:]
     private var connections: [(from: String, to: String)] = []
@@ -161,7 +190,10 @@ public class Flowgraph {
 
 // MARK: - Buffer Pool
 
-/// Manages reusable buffers to reduce allocations
+/// A reusable buffer pool that reduces heap allocations during DSP processing.
+///
+/// Acquire buffers with ``acquire()`` and return them with ``release(_:)``.
+/// The pool caps the number of cached buffers to ``maxBuffers``.
 public class BufferPool {
     private var availableBuffers: [[ComplexFloat]] = []
     private let bufferSize: Int
@@ -190,40 +222,58 @@ public class BufferPool {
 
 // MARK: - Utility Functions
 
-public extension DSPBlock {
-    /// Design a low-pass FIR filter using windowed-sinc method
-    static func designLowpassFIR(cutoff: Double, sampleRate: Double, transitionWidth: Double, attenuation: Double = 60) -> [Float] {
+/// Filter design utilities for creating FIR filter coefficients.
+///
+/// Use ``lowpassFIR(cutoff:sampleRate:transitionWidth:attenuation:)`` to design
+/// windowed-sinc lowpass filters with Hamming windowing.
+public enum DSPFilterDesign {
+    /// Design a low-pass FIR filter using the windowed-sinc method with a Hamming window.
+    ///
+    /// - Parameters:
+    ///   - cutoff: The -3dB cutoff frequency in Hz.
+    ///   - sampleRate: The sample rate in Hz.
+    ///   - transitionWidth: The transition bandwidth in Hz.
+    ///   - attenuation: The stopband attenuation in dB (default 60).
+    /// - Returns: An array of FIR filter coefficients normalized to unity DC gain.
+    public static func lowpassFIR(cutoff: Double, sampleRate: Double, transitionWidth: Double, attenuation: Double = 60) -> [Float] {
         let normalizedCutoff = cutoff / (sampleRate / 2.0)
         let numTaps = Int((attenuation - 22) / (22 * transitionWidth / (sampleRate / 2.0)))
-        
+
         guard numTaps > 0 else { return [] }
-        
+
         // Make sure numTaps is odd for symmetric filter
         let taps = numTaps % 2 == 0 ? numTaps + 1 : numTaps
-        
+
         var coefficients = [Float](repeating: 0, count: taps)
         let center = Float(taps - 1) / 2.0
-        
+
         // Apply windowed-sinc
         for i in 0..<taps {
             let n = Float(i) - center
             let wc = Float(2.0 * Double(normalizedCutoff))
-            
+
             if n == 0 {
                 coefficients[i] = wc
             } else {
                 coefficients[i] = sin(2.0 * .pi * wc * n) / (.pi * n)
             }
-            
+
             // Apply Hamming window
             let window = 0.54 - 0.46 * cos(2.0 * .pi * Float(i) / Float(taps - 1))
             coefficients[i] *= window
         }
-        
+
         // Normalize to unity gain at DC
         let sum = coefficients.reduce(0, +)
         coefficients = coefficients.map { $0 / sum }
-        
+
         return coefficients
+    }
+}
+
+/// Backward compatibility alias — delegates to DSPFilterDesign.lowpassFIR
+public extension DSPBlock {
+    static func designLowpassFIR(cutoff: Double, sampleRate: Double, transitionWidth: Double, attenuation: Double = 60) -> [Float] {
+        return DSPFilterDesign.lowpassFIR(cutoff: cutoff, sampleRate: sampleRate, transitionWidth: transitionWidth, attenuation: attenuation)
     }
 }

@@ -7,7 +7,9 @@
 
 import SwiftUI
 
-struct MainWindow: View {
+public struct MainWindow: View {
+
+    public init() {}
     @EnvironmentObject var appState: AppState
     @State private var sidebarCollapsed = false
     @State private var inspectorCollapsed = false
@@ -16,7 +18,7 @@ struct MainWindow: View {
     @State private var squelchEnabled = false
     @State private var agcEnabled = false
     
-    var body: some View {
+    public var body: some View {
         VStack(spacing: 0) {
             // Toolbar
             MainToolbar()
@@ -81,10 +83,12 @@ struct MainWindow: View {
 
 // MARK: - Toolbar
 
-struct MainToolbar: View {
+public struct MainToolbar: View {
+
+    public init() {}
     @EnvironmentObject var appState: AppState
     
-    var body: some View {
+    public var body: some View {
         HStack(spacing: 16) {
             // Start/Stop
             Button(action: toggleRunning) {
@@ -144,7 +148,7 @@ struct MainToolbar: View {
                         Circle()
                             .stroke(Color.red.opacity(0.5), lineWidth: 2)
                     )
-                    .animation(.pulse, value: appState.isRunning)
+                    .animation(.easeInOut, value: appState.isRunning)
             }
         }
         .padding(.horizontal)
@@ -163,13 +167,15 @@ struct MainToolbar: View {
 
 // MARK: - Sidebar
 
-struct MainSidebar: View {
+public struct MainSidebar: View {
+
+    public init() {}
     @EnvironmentObject var appState: AppState
     @State private var selectedBand = "All Bands"
     
     let bands = ["All Bands", "HF", "VHF", "UHF", "FM Broadcast", "Air Band", "2m Ham", "70cm Ham", "ADS-B"]
     
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Bands
             Text("Bands")
@@ -223,10 +229,12 @@ struct MainSidebar: View {
 
 // MARK: - Display Controls
 
-struct DisplayControls: View {
+public struct DisplayControls: View {
+
+    public init() {}
     @EnvironmentObject var appState: AppState
     
-    var body: some View {
+    public var body: some View {
         HStack(spacing: 12) {
             // Display mode selector
             Picker("Display", selection: Binding(
@@ -267,14 +275,21 @@ struct DisplayControls: View {
 
 // MARK: - Inspector Panel
 
-struct MainInspector: View {
+public struct MainInspector: View {
     @EnvironmentObject var appState: AppState
-    @Binding var gain: Double
-    @Binding var squelchThreshold: Double
-    @Binding var squelchEnabled: Bool
-    @Binding var agcEnabled: Bool
+    @Binding public var gain: Double
+    @Binding public var squelchThreshold: Double
+    @Binding public var squelchEnabled: Bool
+    @Binding public var agcEnabled: Bool
     
-    var body: some View {
+    public init(gain: Binding<Double>, squelchThreshold: Binding<Double>, squelchEnabled: Binding<Bool>, agcEnabled: Binding<Bool>) {
+        self._gain = gain
+        self._squelchThreshold = squelchThreshold
+        self._squelchEnabled = squelchEnabled
+        self._agcEnabled = agcEnabled
+    }
+    
+    public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 // Mode selector
@@ -348,10 +363,12 @@ struct MainInspector: View {
 
 // MARK: - Status Bar
 
-struct MainStatusBar: View {
+public struct MainStatusBar: View {
+
+    public init() {}
     @EnvironmentObject var appState: AppState
     
-    var body: some View {
+    public var body: some View {
         HStack(spacing: 16) {
             // Status message
             Text(appState.statusMessage)
@@ -371,12 +388,12 @@ struct MainStatusBar: View {
             
             // Sample rate
             Text(String(format: "%.2f MSps", appState.sampleRate / 1_000_000))
-                .font(.system(size: 11, monospaced: true))
+                .font(.system(size: 11).monospaced())
                 .foregroundColor(.secondary)
             
             // Frequency
             Text(formatFrequency(appState.frequency))
-                .font(.system(size: 11, monospaced: true))
+                .font(.system(size: 11).monospaced())
                 .foregroundColor(.secondary)
             
             // Mode
@@ -409,15 +426,29 @@ struct MainStatusBar: View {
 
 // MARK: - Combined Display (Spectrum + Waterfall)
 
-struct CombinedDisplayView: View {
-    var body: some View {
-        VStack(spacing: 2) {
-            SpectrumDisplayView()
-                .frame(height: 300)
-            
-            Divider()
-            
-            WaterfallDisplayView()
+public struct CombinedDisplayView: View {
+    @EnvironmentObject var appState: AppState
+
+    public init() {}
+    public var body: some View {
+        Group {
+            if appState.spectrumData.isEmpty || appState.deviceState == .disconnected {
+                ZStack {
+                    Color.black
+                    RadioConsoleEmptyState()
+                }
+            } else {
+                GeometryReader { geometry in
+                    VStack(spacing: 1) {
+                        SpectrumDisplayView()
+                            .frame(height: max(220, geometry.size.height * 0.42))
+
+                        Divider()
+
+                        WaterfallDisplayView()
+                    }
+                }
+            }
         }
     }
 }

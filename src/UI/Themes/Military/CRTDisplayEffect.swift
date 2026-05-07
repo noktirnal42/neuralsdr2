@@ -8,8 +8,8 @@
 import SwiftUI
 import MetalKit
 
-struct CRTDisplayEffect: ViewModifier {
-    func body(content: Content) -> some View {
+public struct CRTDisplayEffect: ViewModifier {
+    public func body(content: Content) -> some View {
         content
             .drawingGroup() // Render to a buffer first
             .overlay(
@@ -18,7 +18,7 @@ struct CRTDisplayEffect: ViewModifier {
                     Rectangle()
                         .fill(LinearGradient(
                             gradient: Gradient(colors: [.clear, .black.opacity(0.2), .clear]),
-                            startPoint: .top, end,Point: .bottom
+                            startPoint: .top, endPoint: .bottom
                         ))
                         .background(ScanlineOverlay())
                     
@@ -42,8 +42,8 @@ struct CRTDisplayEffect: ViewModifier {
     }
 }
 
-struct ScanlineOverlay: View {
-    var body: some View {
+public struct ScanlineOverlay: View {
+    public var body: some View {
         GeometryReader { geo in
             Path { path in
                 let step: CGFloat = 4
@@ -57,7 +57,7 @@ struct ScanlineOverlay: View {
     }
 }
 
-extension View {
+public extension View {
     func applyCRT() -> some View {
         self.modifier(CRTDisplayEffect())
     }

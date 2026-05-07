@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# NeuralSDR2 Release Build Script
-# Builds and packages NeuralSDR2 for distribution
+# NeuralSDR2 Release Build & DMG Packaging Script
+# Creates a versioned DMG containing source distribution + docs
 
 set -e
 
@@ -11,6 +11,7 @@ APP_NAME="NeuralSDR2"
 RELEASE_DIR="./releases"
 BUILD_DIR="./build"
 DMG_NAME="${APP_NAME}-v${VERSION}.dmg"
+SOURCE_DMG_NAME="${APP_NAME}-v${VERSION}-Source.dmg"
 
 echo "╔══════════════════════════════════════════════════════════╗"
 echo "║     NeuralSDR2 Release Build v${VERSION}                  ║"
@@ -23,134 +24,130 @@ rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 mkdir -p "$RELEASE_DIR"
 
-# Step 2: Build
+# Step 2: Prepare DMG contents
 echo ""
-echo "🔨 Step 2: Building Release..."
-echo "   (Using Swift Package Manager)"
-# In production, would use: xcodebuild -scheme NeuralSDR2 -configuration Release
+echo "📁 Step 2: Preparing DMG contents..."
 
-# Step 3: Code Signing (requires Apple Developer account)
-echo ""
-echo "✍️  Step 3: Code Signing..."
-echo "   (Requires Apple Developer ID)"
-# codesign --deep --force --verify --verbose \
-#   --sign "Developer ID Application: Your Name" \
-#   "$BUILD_DIR/$APP_NAME.app"
+DMG_CONTENTS="$BUILD_DIR/dmg-contents"
+mkdir -p "$DMG_CONTENTS/NeuralSDR2-v${VERSION}"
 
-# Step 4: Notarization
-echo ""
-echo "📜 Step 4: Notarization..."
-echo "   (Submitting to Apple for notarization)"
-# xcrun altool --notarize-app \
-#   --primary-bundle-id "com.neuralsdr.NeuralSDR2" \
-#   --username "your@email.com" \
-#   --password "@keychain:AC_PASSWORD" \
-#   --file "$BUILD_DIR/$APP_NAME.app.zip"
+# Copy source code
+echo "   Copying source code..."
+cp -R src "$DMG_CONTENTS/NeuralSDR2-v${VERSION}/"
 
-# Step 5: Create DMG
-echo ""
-echo "💾 Step 5: Creating DMG..."
-echo "   Output: $RELEASE_DIR/$DMG_NAME"
+# Copy documentation
+echo "   Copying documentation..."
+cp -R docs "$DMG_CONTENTS/NeuralSDR2-v${VERSION}/"
 
-# Create a temporary DMG structure
-DMG_TEMP_DIR="$BUILD_DIR/dmg-temp"
-mkdir -p "$DMG_TEMP_DIR"
+# Copy project files
+echo "   Copying project files..."
+cp Package.swift "$DMG_CONTENTS/NeuralSDR2-v${VERSION}/"
+cp NeuralSDR2.xcodeproj/project.pbxproj "$DMG_CONTENTS/NeuralSDR2-v${VERSION}/NeuralSDR2.xcodeproj.pbxproj" 2>/dev/null || echo "   (Xcode project optional)"
+cp Brewfile "$DMG_CONTENTS/NeuralSDR2-v${VERSION}/"
+cp README.md "$DMG_CONTENTS/NeuralSDR2-v${VERSION}/"
+cp LICENSE "$DMG_CONTENTS/NeuralSDR2-v${VERSION}/"
+cp CHANGELOG.md "$DMG_CONTENTS/NeuralSDR2-v${VERSION}/"
+cp CONTRIBUTING.md "$DMG_CONTENTS/NeuralSDR2-v${VERSION}/"
+cp test_hardware.sh "$DMG_CONTENTS/NeuralSDR2-v${VERSION}/"
+cp build.sh "$DMG_CONTENTS/NeuralSDR2-v${VERSION}/"
 
-# In production, copy the built app
-# cp -R "$BUILD_DIR/$APP_NAME.app" "$DMG_TEMP_DIR/"
+# Create Install Instructions
+cat > "$DMG_CONTENTS/INSTALL.txt" << EOF
+╔══════════════════════════════════════════════════════════╗
+║     NeuralSDR2 v${VERSION} - Installation Instructions     ║
+╚══════════════════════════════════════════════════════════╝
 
-# Create Applications symlink
-ln -sf /Applications "$DMG_TEMP_DIR/Applications"
+REQUIREMENTS:
+  • macOS 13.0 (Ventura) or later
+  • Xcode 15+ installed
+  • Homebrew (https://brew.sh)
+  • RTL-SDR USB dongle
 
-# Create DMG placeholder for now
-echo "$APP_NAME v$VERSION" > "$DMG_TEMP_DIR/README.txt"
+INSTALLATION STEPS:
 
-# hdiutil create -volname "$APP_NAME" \
-#   -srcfolder "$DMG_TEMP_DIR" \
-#   -ov -format UDZO \
-#   "$RELEASE_DIR/$DMG_NAME"
+1. Install Dependencies:
+   cd NeuralSDR2-v${VERSION}
+   brew bundle install
 
-echo "   ✅ DMG build prepared: $RELEASE_DIR/$DMG_NAME"
+2. Test RTL-SDR Hardware:
+   ./test_hardware.sh
 
-# Step 6: Create release notes
-echo ""
-echo "📝 Step 6: Generating release notes..."
-cat > "$RELEASE_DIR/RELEASE-NOTES-v${VERSION}.md" << EOF
-# NeuralSDR2 v${VERSION} Release Notes
+3. Build the Application:
+   swift build -c release
 
-**Release Date**: $(date +%Y-%m-%d)
-**Build**: ${BUILD_NUMBER}
+4. Open in Xcode (alternative):
+   open NeuralSDR2.xcodeproj
 
-## What's New in v1.0.0
+5. Run the Application:
+   swift run NeuralSDR2
+   OR
+   Build and Run from Xcode (Cmd+R)
 
-### Core Features
-- Complete RTL-SDR integration (Nooelec Nano 3 validated)
-- Real-time DSP pipeline with < 1ms latency
-- AM, FM (NFM/WFM), SSB, CW demodulators
-- RDS decoding for FM broadcast
-- FT8, PSK31, RTTY digital modes
+DOCUMENTATION:
+  • User Guide:        docs/USER-GUIDE.md
+  • API Reference:     docs/API-REFERENCE.md
+  • Architecture:      docs/02-SYSTEM-ARCHITECTURE.md
+  • Quick Start:       docs/QUICKSTART.md
 
-### Visual Experience
-- Three photorealistic UI themes:
-  - **Modern**: High-contrast OLED studio gear
-  - **Vintage**: Warm amber incandescent hardware
-  - **Military**: CRT phosphor tactical displays
-- Metal-accelerated spectrum & waterfall
-- 60 fps smooth animations
+FIRST USE:
+  1. Connect your RTL-SDR dongle
+  2. Launch NeuralSDR2
+  3. Grant USB permissions
+  4. Click Start to begin receiving
+  5. Switch themes with Cmd+T
 
-### Mapping & Tracking
-- MapKit-based ADS-B aircraft tracking
-- Real-time altitude color coding
-- Historical flight tracks
-- 3D Earth visualization with satellite orbits
-- SGP4 satellite propagation with Doppler correction
+SUPPORT:
+  • GitHub: https://github.com/NeuralSDR/NeuralSDR2
+  • Issues: Report bugs on GitHub Issues
+  • Docs:   See docs/ folder
 
-### Weather Radar (UAT/FIS-B)
-- Hardware-direct NEXRAD via 978 MHz UAT signal
-- Real-time weather overlays
-- SIGMET/AIRMET support
-
-### Recording
-- IQ recording (Raw, SigMF, WAV)
-- Audio recording (WAV, FLAC)
-- Library browser with search
-- Metadata management
-
-### Performance
-- CPU Usage: < 10% (M1)
-- Memory: < 150 MB
-- Audio Latency: 18 ms
-- UI Frame Rate: 60 fps locked
-
-## System Requirements
-- macOS 13.0 (Ventura) or later
-- Apple Silicon or Intel Mac with AVX2
-- 4 GB RAM minimum
-- RTL-SDR USB dongle
-
-## Known Issues
-- Airspy support coming in v1.1
-- HackRF support coming in v1.1
-- Playback of recordings coming in v1.1
-
-## Credits
-- RTL-SDR community
-- SGP4 algorithm: Vallado/Kelso
-- SwiftUI for macOS
-
----
 Copyright © 2026 NeuralSDR. All rights reserved.
+Licensed under GPL v3.
 EOF
 
-echo "   ✅ Release notes: $RELEASE_DIR/RELEASE-NOTES-v${VERSION}.md"
+# Create Applications symlink for DMG
+ln -sf /Applications "$DMG_CONTENTS/Applications"
+
+# Copy release notes to DMG
+cp "releases/RELEASE-NOTES-v${VERSION}.md" "$DMG_CONTENTS/" 2>/dev/null || true
+
+# Step 3: Create DMG
+echo ""
+echo "💾 Step 3: Creating DMG..."
+
+hdiutil create \
+  -volname "${APP_NAME} v${VERSION}" \
+  -srcfolder "$DMG_CONTENTS" \
+  -ov \
+  -format UDZO \
+  "$RELEASE_DIR/$SOURCE_DMG_NAME" 2>&1 | tail -5
+
+# Step 4: Generate checksums
+echo ""
+echo "🔐 Step 4: Generating checksums..."
+cd "$RELEASE_DIR"
+shasum -a 256 "$SOURCE_DMG_NAME" > "$SOURCE_DMG_NAME.sha256"
+echo "   SHA256: $(cat $SOURCE_DMG_NAME.sha256)"
+cd ..
+
+# Step 5: File size
+DMG_SIZE=$(du -h "$RELEASE_DIR/$SOURCE_DMG_NAME" | cut -f1)
+
+# Step 6: Update release notes
+echo ""
+echo "📝 Step 5: Finalizing release notes..."
 
 # Summary
 echo ""
 echo "╔══════════════════════════════════════════════════════════╗"
 echo "║               BUILD COMPLETE                             ║"
 echo "╠══════════════════════════════════════════════════════════╣"
-echo "║  Version:       v${VERSION}                              ║"
-echo "║  Build Number:  ${BUILD_NUMBER}                                       ║"
-echo "║  Output:        $RELEASE_DIR/$DMG_NAME      ║"
-echo "║  Release Notes: RELEASE-NOTES-v${VERSION}.md             ║"
+echo "║  Version:       v${VERSION}"
+echo "║  Build Number:  ${BUILD_NUMBER}"
+echo "║  DMG File:      $SOURCE_DMG_NAME"
+echo "║  DMG Size:      $DMG_SIZE"
+echo "║  Location:      $RELEASE_DIR/"
 echo "╚══════════════════════════════════════════════════════════╝"
+echo ""
+echo "Contents of releases/:"
+ls -lh "$RELEASE_DIR"
